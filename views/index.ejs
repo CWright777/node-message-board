@@ -7,31 +7,63 @@
   <script type="text/javascript">
     $(document).ready(function(){
       var socket = io.connect();
+      var user_name
+      $('#new_message').hide()
 
-      $('#epic').click(function(){
-        console.log("adaasd")
-        socket.emit('epic_clicked', true)
+      $('#ok_btn').click(function(){
+        user_name = $('#user_name').val()
+        socket.emit('new_user', {response: user_name})
       })
 
-      socket.on('current_number',function(data){
-        $('h1').html("The button has been pushed " + JSON.stringify(data.response))
+      socket.on('user_exists', function(data){
+        $('#error').html(data.error)
+      })
+      socket.on('user_joined',function(data){
+        $('#heading').html("<h1>Conversation Board</h1>")
+
+        $('form').show()
       })
       
-      $('#reset').click(function(){
-        socket.emit('reset_clicked', true)
+      $('#new_message').submit(function(){
+        socket.emit('message_sent', {user: user_name, content: $('#message').val()})
+        return false
       }) 
 
-      socket.on('current_number',function(data){
-        $('h1').html("The button has been pushed " + JSON.stringify(data.response))
+      socket.on('new_message',function(data){
+        var user = data.response.user
+        var content = data.response.content
+        $('#message_board').append("<p>"+user+":  "+content+"</p>")
+        console.log(data)
+      })
+
+      socket.on('load_messages',function(data){
+        $('#name_form').hide()
+        for(i in data.message){
+          console.log(data.message)
+          var user = data.message[i].user
+          var content = data.message[i].content
+          $('#message_board').append("<p>"+user+":  "+content+"</p>")
+        }
       })
     })
   </script>
 </head>
 
 <body>
-  <h1></h1>
-  <h2>Push the button to update the count!</h2>
-  <div id="epic">Push the epic button</div>
-  <div id="reset">Reset count</div>
+  <div id="main">
+    <div id="error"></div>
+    <div id="heading">
+      <h1>The page at https://localhost says:</h1>
+    </div>
+    <div id="name_form">
+      <input type="text" id="user_name"> 
+      <button id="ok_btn">OK</button>
+    </div>
+    <div id="message_board"></div>
+    <form id="new_message">
+      <input type="text" id="message" placeholder="Enter a message">
+      <input type="submit" value="Send">
+    </form>
+  </div>
 </body>
 </html>
